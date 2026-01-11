@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Schmidt.Mediator
@@ -17,15 +18,15 @@ namespace Schmidt.Mediator
             _serviceProvider = serviceProvider;
         }
 
-        public Task SendAsync<TRequest>(TRequest request)
+        public Task SendAsync<TRequest>(TRequest request, CancellationToken cancelationToken = default)
             where TRequest : IRequest
         {
             var typeHandler = RequestsHandlers[request.GetType()];
             var handler = _serviceProvider.GetRequiredService(typeHandler) as IRequestHandler<TRequest>;
-            return handler.HandleAsync(request);
+            return handler.HandleAsync(request, cancelationToken);
         }
 
-        public async Task PublishAsync<TEvent>(TEvent @event)
+        public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancelationToken = default)
             where TEvent : IEvent
         {
             var typeHandler = EventsHandlers[@event.GetType()];
@@ -33,17 +34,17 @@ namespace Schmidt.Mediator
             foreach (var handlerType in typeHandler)
             {
                 var handler = _serviceProvider.GetRequiredService(handlerType) as IEventHandler<TEvent>;
-                events.Add(handler.HandleAsync(@event));
+                events.Add(handler.HandleAsync(@event, cancelationToken));
             }
             await Task.WhenAll(events);
         }
 
-        public Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request)
+        public Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancelationToken = default)
         {
             var typeHandler = RequestsHandlers[request.GetType()];
             var handler = _serviceProvider.GetRequiredService(typeHandler);
             var method = handler.GetType().GetMethod(nameof(IRequestHandler<IRequest<TResponse>, TResponse>.HandleAsync));
-            var response = method.Invoke(handler, new object[] { request }) as Task<TResponse>;
+            var response = method.Invoke(handler, new object[] { request, cancelationToken }) as Task<TResponse>;
             return response;
         }
     }
