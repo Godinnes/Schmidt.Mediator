@@ -2,6 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>Schmidt.Mediator</PackageId>
+	  <Version>1.0.0</Version>
+	  <Authors>Marcelo Schmidt</Authors>
+	  <Company>Marcelo Schmidt</Company>
+	  <PackageDescription>Mediator</PackageDescription>
+	  <RepositoryUrl>https://github.com/Godinnes/Schmidt.Mediator</RepositoryUrl>
+	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
