@@ -1,0 +1,44 @@
+name: Publish NuGet packages
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: publish-nuget
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Pack all projects under src
+        run: |
+          mkdir -p ./artifacts
+          for proj in $(find src -name "*.csproj"); do
+            echo "Packing $proj"
+            dotnet pack "$proj" --configuration Release --no-build -o ./artifacts
+          done
+
+      - name: Publish to nuget.org
+        env:
+          NUGET_API_KEY: ${{ secrets.PACKAGE_TOKEN }}
+        run: |
+          echo "Publishing packages..."
+          dotnet nuget push "./artifacts/*.nupkg" --api-key $NUGET_API_KEY --source https://nuget.pkg.github.com/Godinnes/index.json --skip-duplicate
