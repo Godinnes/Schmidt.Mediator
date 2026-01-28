@@ -28,10 +28,10 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      - name: Pack all projects under src
+      - name: Pack project
         run: |
           mkdir -p ./artifacts
-          for proj in $(find src -name "*.csproj"); do
+          for proj in $(find -name "*.csproj"); do
             echo "Packing $proj"
             dotnet pack "$proj" --configuration Release --no-build -o ./artifacts
           done
