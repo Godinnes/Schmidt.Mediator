@@ -22,8 +22,10 @@ namespace Schmidt.Mediator
             where TRequest : IRequest
         {
             var typeHandler = RequestsHandlers[request.GetType()];
-            var handler = _serviceProvider.GetRequiredService(typeHandler) as IRequestHandler<TRequest>;
-            return handler.HandleAsync(request, cancelationToken);
+            var handler = _serviceProvider.GetService(typeHandler);
+            var method = handler.GetType().GetMethod(nameof(IRequestHandler<IRequest>.HandleAsync));
+            var response = method.Invoke(handler, new object[] { request, cancelationToken }) as Task;
+            return response;
         }
 
         public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancelationToken = default)
@@ -33,8 +35,10 @@ namespace Schmidt.Mediator
             var events = new List<Task>();
             foreach (var handlerType in typeHandler)
             {
-                var handler = _serviceProvider.GetRequiredService(handlerType) as IEventHandler<TEvent>;
-                events.Add(handler.HandleAsync(@event, cancelationToken));
+                var handler = _serviceProvider.GetService(handlerType);
+                var method = handler.GetType().GetMethod(nameof(IEventHandler<IEvent>.HandleAsync));
+                var response = method.Invoke(handler, new object[] { @event, cancelationToken }) as Task;
+                events.Add(response);
             }
             await Task.WhenAll(events);
         }
